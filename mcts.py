@@ -60,8 +60,8 @@ class MCTSNode(object):
         self.unexploredActions = self.legalActions[:]
         self.borderline = borderline
         self.agent = agent
-        self.epsilon = 1
-        self.rewards = 0
+        # self.epsilon = 1
+        # self.rewards = 0
 
     # Selection
     def select_best_child(self, exploration_constant=2):
@@ -96,10 +96,10 @@ class MCTSNode(object):
             self.child.append(child_node)
             return child_node
 
-        if util.flipCoin(self.epsilon):
-            next_best_child = self.select_best_child()
-        else:
-            next_best_child = random.choice(self.child)
+        # if util.flipCoin(self.epsilon):
+        # else:
+        #     next_best_child = random.choice(self.child)
+        next_best_child = self.select_best_child()
 
         return next_best_child.node_expansion()
 
@@ -223,6 +223,10 @@ class BaseAgent(CaptureAgent):
         my_position = gameState.getAgentPosition(self.index)
         return min([self.getMazeDistance(my_position, food) for food in self.getFood(gameState).asList()])
 
+    def get_min_distance_to_capsule(self, gameState):
+        my_position = gameState.getAgentPosition(self.index)
+        return min([self.getMazeDistance(my_position, capsule) for capsule in self.getCapsules(gameState)])
+
     def chooseAction(self, gameState):
         actions = gameState.getLegalActions(self.index)
         agent_state = gameState.getAgentState(self.index)
@@ -303,15 +307,20 @@ class OffensiveAgent(BaseAgent):
 
         if next_state.getAgentState(self.index).numCarrying > gameState.getAgentState(self.index).numCarrying:
             features['getFood'] = 1
-        elif len(self.getFood(next_state).asList()) > 0:
+
+        if len(self.getFood(next_state).asList()) > 0:
             features['minDistanceToFood'] = self.get_min_distance_to_food(
+                next_state)
+
+        if self.getCapsules(gameState) != None:
+            features['getCapsules'] = self.get_min_distance_to_capsule(
                 next_state)
 
         return features
 
     def get_off_weights(self, gameState, action):
 
-        return {'minDistanceToFood': -1, 'getFood': 100}
+        return {'minDistanceToFood': -1, 'getCapsules': 1000, 'getFood': 100}
 
     def get_def_features(self, gameState, action):
         """
